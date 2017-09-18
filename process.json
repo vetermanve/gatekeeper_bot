@@ -1,0 +1,12 @@
+{
+  "apps" : [{
+    "name": "gatekeeper bot",
+    "script": "bot.js",
+    "env": {
+      "BOT_TOKEN": "development"
+    },
+    "env_production" : {
+      "NODE_ENV": "production"
+    }
+  }]
+}

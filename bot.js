@@ -1,8 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
-const Redis = require('redis');
 
-// replace the value below with the Telegram token you receive from @BotFather
-const token = '418533362:AAEC-trxHTvrcaHcMHrvKm4L9kv2uY0SF4s';
+const token =  process.env.BOT_TOKEN || '' || '418533362:AAEplO5cbm8qyqU84iEuXU5gkYgsXWE6BAA';
 
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
@@ -14,13 +12,15 @@ FrazeStorage.hello = 'Мы рады видесть Вас, {username} в это�
     'Это сообщество очень трепетно относится к составу и вежливости участников.\nВ случае если я не увижу привествия с ваше стороны я буду ' +
     'вынужден удалить вас из чата через 10 минут.\nСпасибо что присоединились!';
 
+FrazeStorage.success = "Спасибо! Вы приняты в сообщество!"; 
+
 class CheckTable {
     
     constructor () {
         this.checks = {};
     }
     
-    addCheck (chatId, userId, fake) {
+    addCheck (chatId, userId, name, fake) {
         let self = this;
         let key = chatId + ':' + userId;
         
@@ -36,6 +36,7 @@ class CheckTable {
         this.checks[key] = {
             userId : userId,
             chatId : chatId,
+            name : name || userId, 
             timeout : timeout,
             fake : fake || false
         };
@@ -50,12 +51,8 @@ class CheckTable {
         
         delete this.checks[key];
         console.log(key + ' was approved');
-        bot.sendMessage(chatId, "Спасибо!" , {
-            reply_to_message_id: messageId,
-            reply_markup: {
-                force_reply: true,
-                selective: true
-            }
+        bot.sendMessage(chatId, FrazeStorage.success , {
+            reply_to_message_id: messageId
         }).then(() => {
             console.log("Approve sent");
         })
@@ -77,8 +74,11 @@ class CheckTable {
         
         bot.kickChatMember(check.chatId, check.userId).then(function () {
             console.log(check.userId + ' was kicked from ' + check.chatId);
-            bot.unbanChatMember(check.chatId, check.userId);
+            bot.unbanChatMember(check.chatId, check.userId).catch(function () {
+                console.error('Error unbanning ' + check.userId + ' from ' + check.chatId);
+            });
         }).catch(function () {
+            bot.sendMessage(check.chatId, "Ай не получилось выкинуть " + check.name + ' за дверь!\nСделайте меня уже админом!');
             console.warn('Error on kicking ' + check.userId + ' from ' + check.chatId);
         });
     }
@@ -86,12 +86,18 @@ class CheckTable {
 
 let table = new CheckTable();
 
+
+bot.on('text', (msg) => {
+    console.log('Has text', [msg.chat.id, msg.from.id, msg.message_id]);
+    table.approve(msg.chat.id, msg.from.id, msg.message_id);
+});
+
 // Matches "/echo [whatever]"
 bot.onText(/\/checkme(.*)/, (msg, match) => {
     const chatId = msg.chat.id;
     console.log(match);
     let param = match[1].trim();
-    table.addCheck(chatId, msg.from.id, '@' + msg.from.username);
+    table.addCheck(chatId, msg.from.id, '@' + msg.from.username, true);
     bot.sendMessage(chatId, 'Сейчас пробуем!');
 });
 
@@ -105,21 +111,16 @@ bot.on('new_chat_members', (msg) => {
     // let members = msg.new_chat_members || [msg.from] || [];
     for (let id in members) {
         let member = members[id];
-        // if (member.is_bot === true) {
-        //     continue;
-        // }
+        if (member.is_bot === true) {
+            continue;
+        }
 
-        bot.unbanChatMember(chatId, member.id);
+        bot.unbanChatMember(chatId, member.id).catch(function () {});
         
         let name = member.username ?  '@' + member.username : (member.first_name + ' ' + (member.last_name || '')).trim();
         let greet =  FrazeStorage.hello.replace('{username}', name);
-        table.addCheck(chatId, member.id);
+        table.addCheck(chatId, member.id, name);
         
         bot.sendMessage(chatId, greet);    
     }
-});
-
-bot.on('text', (msg) => {
-    console.log('Has text', [msg.chat.id, msg.from.id, msg.message_id]);
-    table.approve(msg.chat.id, msg.from.id, msg.message_id);
 });
