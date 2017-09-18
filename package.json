@@ -1,0 +1,11 @@
+{
+  "name": "gatekeeper",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bot.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.28.0"
+  }
+}
