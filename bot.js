@@ -97,8 +97,8 @@ bot.on('text', (msg) => {
 bot.onText(/\/checkme (\d+)/, (msg, match) => {
     const chatId = msg.chat.id;
     console.log(match);
-    let timeout = parseInt(match[1].trim());
-    table.addCheck(chatId, msg.from.id, '@' + msg.from.username, true, timeout);
+    let customTimeout = parseInt(match[1].trim());
+    table.addCheck(chatId, msg.from.id, '@' + msg.from.username, true, customTimeout);
     bot.sendMessage(chatId, 'Сейчас пробуем!');
 });
 
