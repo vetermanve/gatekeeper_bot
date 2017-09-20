@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 
-const token =  process.env.BOT_TOKEN || '' || '418533362:AAEplO5cbm8qyqU84iEuXU5gkYgsXWE6BAA';
+const token =  process.env.BOT_TOKEN || '';
+const waitTime =  process.env.KICK_WAIT || 1800000; // default 30m
 
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
@@ -20,7 +21,7 @@ class CheckTable {
         this.checks = {};
     }
     
-    addCheck (chatId, userId, name, fake) {
+    addCheck (chatId, userId, name, fake, customTimeout) {
         let self = this;
         let key = chatId + ':' + userId;
         
@@ -31,13 +32,13 @@ class CheckTable {
         
         let timeout = setTimeout(() => {
             self.kick(key) 
-        }, 60000);
+        }, waitTime);
         
         this.checks[key] = {
             userId : userId,
             chatId : chatId,
             name : name || userId, 
-            timeout : timeout,
+            timeout : customTimeout || timeout,
             fake : fake || false
         };
     }
@@ -68,7 +69,7 @@ class CheckTable {
         delete this.checks[checkKey];
         
         if (check.fake) {
-            bot.sendMessage(check.chatId, "А вас " + check.fake + ' я бы сейчас выкинул');
+            bot.sendMessage(check.chatId, "А вас " + check.name + ' я бы сейчас выкинул');
             return;
         }
         
@@ -93,11 +94,11 @@ bot.on('text', (msg) => {
 });
 
 // Matches "/echo [whatever]"
-bot.onText(/\/checkme(.*)/, (msg, match) => {
+bot.onText(/\/checkme (\d+)/, (msg, match) => {
     const chatId = msg.chat.id;
     console.log(match);
-    let param = match[1].trim();
-    table.addCheck(chatId, msg.from.id, '@' + msg.from.username, true);
+    let timeout = parseInt(match[1].trim());
+    table.addCheck(chatId, msg.from.id, '@' + msg.from.username, true, timeout);
     bot.sendMessage(chatId, 'Сейчас пробуем!');
 });
 
