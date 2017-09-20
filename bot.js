@@ -24,6 +24,7 @@ class CheckTable {
     addCheck (chatId, userId, name, fake, customTimeout) {
         let self = this;
         let key = chatId + ':' + userId;
+        let kickAfter = customTimeout || timeout;
         
         if (this.checks[key]) {
             console.log(key + ' already watched');
@@ -32,13 +33,13 @@ class CheckTable {
         
         let timeout = setTimeout(() => {
             self.kick(key) 
-        }, waitTime);
+        }, kickAfter);
         
         this.checks[key] = {
             userId : userId,
             chatId : chatId,
             name : name || userId, 
-            timeout : customTimeout || timeout,
+            timeout : kickAfter,
             fake : fake || false
         };
     }
