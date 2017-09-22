@@ -125,6 +125,8 @@ bot.on('new_chat_members', (msg) => {
         let greet =  FrazeStorage.hello.replace('{username}', name);
         table.addCheck(chatId, member.id, name);
         
-        bot.sendMessage(chatId, greet);    
+        bot.sendMessage(chatId, greet, {
+            reply_to_message_id: msg.message_id
+        });
     }
 });
