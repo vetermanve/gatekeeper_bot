@@ -119,7 +119,7 @@ bot.on('new_chat_members', (msg) => {
             continue;
         }
 
-        bot.unbanChatMember(chatId, member.id).catch(function () {});
+        //bot.unbanChatMember(chatId, member.id).catch(function () {});
         
         let name = member.username ?  '@' + member.username : (member.first_name + ' ' + (member.last_name || '')).trim();
         let greet =  FrazeStorage.hello.replace('{username}', name);
