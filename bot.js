@@ -51,8 +51,23 @@ class CheckTable {
     getCheckKey (chatId, userId) {
         return chatId + ':' + userId
     }
-    
-    approve (chatId, userId, messageId, text) {
+
+    checkFirstMessage (chatId, userId, messageId, text) {
+        if (urlRegex({strict: false}).test(text)) {
+            this.kickForBadMessage(chatId, userId, messageId)
+        } else {
+            this.approve(chatId, userId, messageId)
+        }
+    }
+
+    kickForBadMessage (chatId, userId, messageId) {
+        let key = this.getCheckKey(chatId, userId);
+        table.removeMessage(chatId, messageId);
+        table.kick(table.getCheckKey(chatId, userId));
+        console.log(key + ' was removed due to link in hello message');
+    }
+
+    approve (chatId, userId, messageId) {
         let key = this.getCheckKey(chatId, userId);
 
         if (!this.checks[key]) {
@@ -61,17 +76,11 @@ class CheckTable {
 
         delete this.checks[key];
 
-        if (urlRegex({strict: false}).test(text)) {
-            table.kick(table.getCheckKey(chatId, userId));
-            table.removeMessage(chatId, messageId)
-            console.log(key + ' was removed due to link');
-        } else {
-            bot.sendMessage(chatId, FrazeStorage.success , {
-                reply_to_message_id: messageId
-            }).then(() => {
-                console.log("Approve sent");
-            })
-        }
+        bot.sendMessage(chatId, FrazeStorage.success , {
+            reply_to_message_id: messageId
+        }).then(() => {
+            console.log("Approve sent");
+        })
     }
     
     kick (checkKey) {
@@ -112,7 +121,7 @@ let table = new CheckTable();
 
 bot.on('text', (msg) => {
     console.log('Has text', [msg.chat.id, msg.from.id, msg.message_id]);
-    table.approve(msg.chat.id, msg.from.id, msg.message_id, msg.text);
+    table.checkFirstMessage(msg.chat.id, msg.from.id, msg.message_id, msg.text);
 });
 
 // Matches "/echo [whatever]"
