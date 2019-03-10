@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+const urlRegex = require('url-regex');
 
 const token =  process.env.BOT_TOKEN || '';
 const waitTime =  process.env.KICK_WAIT || 1800000; // default 30m
@@ -12,7 +13,8 @@ class FrazeStorage {
 FrazeStorage.hello = 'Мы рады видеть Вас, {username}, в этом чате.\n' +
 'Пожалуйста, представьтесь и поздоровайтесь с сообществом.\n' +
 'Это сообщество очень трепетно относится к составу и вежливости участников.\n' +
-'В случае, если я не увижу приветствия с вашей стороны, я буду вынужден удалить вас из чата через 30 минут.\n' +
+'В случае, если я не увижу приветствия с вашей стороны, я буду вынужден удалить вас из чата через 30 минут.\n\n' +
+'Любые ссылки в приветственном сообщении будут расценены как спам и неуважение к сообществу.\n\n' +
 'Спасибо, что присоединились!';
 
 FrazeStorage.success = "Спасибо! Вы приняты в сообщество!"; 
@@ -25,9 +27,9 @@ class CheckTable {
     
     addCheck (chatId, userId, name, fake, customTimeout) {
         let self = this;
-        let key = chatId + ':' + userId;
+        let key = this.getCheckKey(chatId, userId);
         let kickAfter = customTimeout || waitTime;
-        
+
         if (this.checks[key]) {
             console.log(key + ' already watched');
             return ;
@@ -45,21 +47,31 @@ class CheckTable {
             fake : fake || false
         };
     }
+
+    getCheckKey (chatId, userId) {
+        return chatId + ':' + userId
+    }
     
-    approve (chatId, userId, messageId) {
-        let key = chatId + ':' + userId;
+    approve (chatId, userId, messageId, text) {
+        let key = this.getCheckKey(chatId, userId);
 
         if (!this.checks[key]) {
             return;
         }
-        
+
         delete this.checks[key];
-        console.log(key + ' was approved');
-        bot.sendMessage(chatId, FrazeStorage.success , {
-            reply_to_message_id: messageId
-        }).then(() => {
-            console.log("Approve sent");
-        })
+
+        if (urlRegex({strict: false}).test(text)) {
+            table.kick(table.getCheckKey(chatId, userId));
+            table.removeMessage(chatId, messageId)
+            console.log(key + ' was removed due to link');
+        } else {
+            bot.sendMessage(chatId, FrazeStorage.success , {
+                reply_to_message_id: messageId
+            }).then(() => {
+                console.log("Approve sent");
+            })
+        }
     }
     
     kick (checkKey) {
@@ -86,6 +98,13 @@ class CheckTable {
             console.warn('Error on kicking ' + check.userId + ' from ' + check.chatId);
         });
     }
+
+    removeMessage(chatId, messageId) {
+        bot.deleteMessage(chatId, messageId).catch(function () {
+            bot.sendMessage(chatId, 'А почему это я сообщения не могу удалять?!\nСделайте меня уже админом!');
+            console.warn('Error on removing message ' + messageId + ' from ' + chatId);
+        })
+    }
 }
 
 let table = new CheckTable();
@@ -93,7 +112,7 @@ let table = new CheckTable();
 
 bot.on('text', (msg) => {
     console.log('Has text', [msg.chat.id, msg.from.id, msg.message_id]);
-    table.approve(msg.chat.id, msg.from.id, msg.message_id);
+    table.approve(msg.chat.id, msg.from.id, msg.message_id, msg.text);
 });
 
 // Matches "/echo [whatever]"
