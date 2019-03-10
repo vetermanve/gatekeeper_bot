@@ -53,6 +53,11 @@ class CheckTable {
     }
 
     checkFirstMessage (chatId, userId, messageId, text) {
+        let key = this.getCheckKey(chatId, userId);
+        if (!this.checks[key]) {
+            return;
+        }
+
         if (urlRegex({strict: false}).test(text)) {
             this.kickForBadMessage(chatId, userId, messageId)
         } else {
