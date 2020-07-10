@@ -2,8 +2,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const urlRegex = require('url-regex');
 
 const token =  process.env.BOT_TOKEN || '';
-const MS_IN_A_MINUTE = 60000;
-const waitTime =  process.env.KICK_WAIT || 30 * MS_IN_A_MINUTE;
+const MINUTE_IN_MS = 60000;
+const waitTime =  process.env.KICK_WAIT || 30 * MINUTE_IN_MS;
 
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
@@ -21,7 +21,6 @@ const PhraseStorage = {
 
 
 class CheckTable {
-
     constructor () {
         this.checks = {};
     }
