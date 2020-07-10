@@ -16,7 +16,7 @@ const PhraseStorage = {
         'Любые ссылки в приветственном сообщении будут расценены как спам и неуважение к сообществу.\n\n' +
         'Спасибо, что присоединились!',
 
-    success: "Спасибо! Вы приняты в сообщество!",
+    getSuccessText: () => 'Спасибо! Вы приняты в сообщество!',
 }
 
 
@@ -81,10 +81,10 @@ class CheckTable {
 
         delete this.checks[key];
 
-        bot.sendMessage(chatId, PhraseStorage.success , {
+        bot.sendMessage(chatId, PhraseStorage.getSuccessText() , {
             reply_to_message_id: messageId
         }).then(() => {
-            console.log("Approve sent");
+            console.log('Approve sent');
         })
     }
 
@@ -98,7 +98,7 @@ class CheckTable {
         delete this.checks[checkKey];
 
         if (check.fake) {
-            bot.sendMessage(check.chatId, "А вас " + check.name + ' я бы сейчас выкинул');
+            bot.sendMessage(check.chatId, 'А вас ' + check.name + ' я бы сейчас выкинул');
             return;
         }
 
@@ -108,7 +108,7 @@ class CheckTable {
                 console.error('Error unbanning ' + check.userId + ' from ' + check.chatId);
             });
         }).catch(function () {
-            bot.sendMessage(check.chatId, "Ай не получилось выкинуть " + check.name + ' за дверь!\nСделайте меня уже админом!');
+            bot.sendMessage(check.chatId, 'Ай не получилось выкинуть ' + check.name + ' за дверь!\nСделайте меня уже админом!');
             console.warn('Error on kicking ' + check.userId + ' from ' + check.chatId);
         });
     }
@@ -129,7 +129,7 @@ bot.on('text', (msg) => {
     table.checkFirstMessage(msg.chat.id, msg.from.id, msg.message_id, msg.text);
 });
 
-// Matches "/echo [whatever]"
+// Matches '/echo [whatever]'
 bot.onText(/\/checkme (\d+)/, (msg, match) => {
     const chatId = msg.chat.id;
     console.log(match);
