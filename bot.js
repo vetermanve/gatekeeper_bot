@@ -2,29 +2,29 @@ const TelegramBot = require('node-telegram-bot-api');
 const urlRegex = require('url-regex');
 
 const token =  process.env.BOT_TOKEN || '';
-const waitTime =  process.env.KICK_WAIT || 1800000; // default 30m
+const MINUTE_IN_MS = 60000;
+const waitTime =  process.env.KICK_WAIT || 30 * MINUTE_IN_MS;
 
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
 
-class FrazeStorage {
+const PhraseStorage = {
+    getGreetingText: (username) => `Мы рады видеть Вас, ${username}, в этом чате.\n` +
+        'Пожалуйста, представьтесь и поздоровайтесь с сообществом.\n' +
+        'Это сообщество очень трепетно относится к составу и вежливости участников.\n' +
+        'В случае, если я не увижу приветствия с вашей стороны, я буду вынужден удалить вас из чата через 30 минут.\n\n' +
+        'Любые ссылки в приветственном сообщении будут расценены как спам и неуважение к сообществу.\n\n' +
+        'Спасибо, что присоединились!',
+
+    getSuccessText: () => 'Спасибо! Вы приняты в сообщество!',
 }
 
-FrazeStorage.hello = 'Мы рады видеть Вас, {username}, в этом чате.\n' +
-'Пожалуйста, представьтесь и поздоровайтесь с сообществом.\n' +
-'Это сообщество очень трепетно относится к составу и вежливости участников.\n' +
-'В случае, если я не увижу приветствия с вашей стороны, я буду вынужден удалить вас из чата через 30 минут.\n\n' +
-'Любые ссылки в приветственном сообщении будут расценены как спам и неуважение к сообществу.\n\n' +
-'Спасибо, что присоединились!';
-
-FrazeStorage.success = "Спасибо! Вы приняты в сообщество!"; 
 
 class CheckTable {
-    
     constructor () {
         this.checks = {};
     }
-    
+
     addCheck (chatId, userId, name, fake, customTimeout) {
         let self = this;
         let key = this.getCheckKey(chatId, userId);
@@ -34,15 +34,15 @@ class CheckTable {
             console.log(key + ' already watched');
             return ;
         }
-        
+
         setTimeout(() => {
-            self.kick(key) 
+            self.kick(key)
         }, kickAfter);
-        
+
         this.checks[key] = {
             userId : userId,
             chatId : chatId,
-            name : name || userId, 
+            name : name || userId,
             timeout : kickAfter,
             fake : fake || false
         };
@@ -81,34 +81,34 @@ class CheckTable {
 
         delete this.checks[key];
 
-        bot.sendMessage(chatId, FrazeStorage.success , {
+        bot.sendMessage(chatId, PhraseStorage.getSuccessText() , {
             reply_to_message_id: messageId
         }).then(() => {
-            console.log("Approve sent");
+            console.log('Approve sent');
         })
     }
-    
+
     kick (checkKey) {
         let check = this.checks[checkKey];
         if (!check) {
             console.log(checkKey + ' check not found for kicking');
             return ;
         }
-        
+
         delete this.checks[checkKey];
-        
+
         if (check.fake) {
-            bot.sendMessage(check.chatId, "А вас " + check.name + ' я бы сейчас выкинул');
+            bot.sendMessage(check.chatId, 'А вас ' + check.name + ' я бы сейчас выкинул');
             return;
         }
-        
+
         bot.kickChatMember(check.chatId, check.userId).then(function () {
             console.log(check.userId + ' was kicked from ' + check.chatId);
             bot.unbanChatMember(check.chatId, check.userId).catch(function () {
                 console.error('Error unbanning ' + check.userId + ' from ' + check.chatId);
             });
         }).catch(function () {
-            bot.sendMessage(check.chatId, "Ай не получилось выкинуть " + check.name + ' за дверь!\nСделайте меня уже админом!');
+            bot.sendMessage(check.chatId, 'Ай не получилось выкинуть ' + check.name + ' за дверь!\nСделайте меня уже админом!');
             console.warn('Error on kicking ' + check.userId + ' from ' + check.chatId);
         });
     }
@@ -129,7 +129,7 @@ bot.on('text', (msg) => {
     table.checkFirstMessage(msg.chat.id, msg.from.id, msg.message_id, msg.text);
 });
 
-// Matches "/echo [whatever]"
+// Matches '/echo [whatever]'
 bot.onText(/\/checkme (\d+)/, (msg, match) => {
     const chatId = msg.chat.id;
     console.log(match);
@@ -153,11 +153,11 @@ bot.on('new_chat_members', (msg) => {
         }
 
         //bot.unbanChatMember(chatId, member.id).catch(function () {});
-        
+
         let name = member.username ?  '@' + member.username : (member.first_name + ' ' + (member.last_name || '')).trim();
-        let greet =  FrazeStorage.hello.replace('{username}', name);
+        let greet =  PhraseStorage.getGreetingText(name);
         table.addCheck(chatId, member.id, name);
-        
+
         bot.sendMessage(chatId, greet, {
             reply_to_message_id: msg.message_id
         });
