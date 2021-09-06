@@ -1,5 +1,7 @@
+process.env.NTBA_FIX_319 = 1;
+
 const TelegramBot = require('node-telegram-bot-api');
-const urlRegex = require('url-regex');
+const urlRegex = require('url-regex-safe');
 
 const token =  process.env.BOT_TOKEN || '';
 const MINUTE_IN_MS = 60000;

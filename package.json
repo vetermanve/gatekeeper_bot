@@ -6,9 +6,9 @@
     "start": "node ./bot.js"
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.30.0",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.7",
-    "url-regex": "^4.1.1"
+    "node-telegram-bot-api": "^0.54.0",
+    "request": "^2.88.2",
+    "request-promise-native": "^1.0.9",
+    "url-regex-safe": "^2.0.2"
   }
 }
