@@ -29,8 +29,3 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
-    - uses: ncipollo/release-action@v1
-      with:
-        artifacts: "*"
-        bodyFile: "README.md"
-        token: ${{ secrets.GITHUB_TOKEN }}
